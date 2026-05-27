@@ -10,10 +10,10 @@ export const databaseConfig = (
   username: configService.get<string>('DB_USERNAME'),
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_DATABASE'),
-  synchronize: configService.get<string>('NODE_ENV') === 'development', // Chỉ sync trong dev
+  synchronize: configService.get<string>('NODE_ENV') === 'development',
   logging:
     configService.get<string>('NODE_ENV') === 'development'
-      ? true
+      ? ['error', 'warn']
       : ['error', 'warn'],
   autoLoadEntities: true,
   extra: {

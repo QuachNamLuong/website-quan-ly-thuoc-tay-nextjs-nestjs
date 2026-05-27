@@ -1,32 +1,53 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { ApiError } from '@/lib/api/client';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/common/spinner';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Chỉ UI, chưa xử lý logic submit
-  const handleSubmit = (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: thêm logic đăng nhập sau
-    console.log({ email, password, rememberMe });
+    setError(null);
+    setLoading(true);
+    try {
+      await login(email, password);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : 'Có lỗi xảy ra, vui lòng thử lại';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Đăng nhập</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Đăng nhập</CardTitle>
           <CardDescription>
-            Nhập email và mật khẩu để truy cập tài khoản của bạn
+            Nhập email và mật khẩu để truy cập hệ thống
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -36,10 +57,11 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="ten@example.com"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -51,40 +73,33 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
+                minLength={6}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked === true)}
-                />
-                <Label
-                  htmlFor="remember"
-                  className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Ghi nhớ đăng nhập
-                </Label>
-              </div>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-primary underline-offset-4 hover:underline"
+            {error && (
+              <p
+                role="alert"
+                className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2"
               >
-                Quên mật khẩu?
-              </Link>
-            </div>
+                {error}
+              </p>
+            )}
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full">
+          <CardFooter className="flex flex-col gap-3">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Spinner />}
               Đăng nhập
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
-              Chưa có tài khoản?{" "}
-              <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+            <p className="text-sm text-muted-foreground text-center">
+              Chưa có tài khoản?{' '}
+              <Link
+                href="/auth/register"
+                className="text-primary hover:underline"
+              >
                 Đăng ký ngay
               </Link>
-            </div>
+            </p>
           </CardFooter>
         </form>
       </Card>
